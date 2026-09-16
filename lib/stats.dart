@@ -20,10 +20,10 @@ String mostCommonType(List<Monster> ms) {
     counts[m.type] = (counts[m.type] ?? 0) + 1;
   }
   var best = ms.first.type;
-  var bestCount = 1 << 30;
+  var bestCount = -1;
   for (final entry in counts.entries) {
-    // BUG A: this keeps the LEAST common type, not the most common.
-    if (entry.value < bestCount) {
+    // BUG A fix: keep the MOST common type.
+    if (entry.value > bestCount) {
       best = entry.key;
       bestCount = entry.value;
     }
@@ -33,18 +33,17 @@ String mostCommonType(List<Monster> ms) {
 
 /// How many monsters have HP strictly greater than the threshold.
 int highHpCount(List<Monster> ms) =>
-    // BUG B: this counts HP equal to the threshold as well.
-    ms.where((m) => m.hp >= kHighHpThreshold).length;
+    // BUG B fix: strictly greater than, not equal.
+    ms.where((m) => m.hp > kHighHpThreshold).length;
 
 /// The region with the most monsters ("busiest").
 String topRegion(List<Monster> ms) {
   final counts = <String, int>{};
   for (final m in ms) {
-    // BUG C: this groups by the wrong field (element), so the panel shows an
-    // element name where a region should be.
-    counts[m.element] = (counts[m.element] ?? 0) + 1;
+    // BUG C fix: group by region, not element.
+    counts[m.region] = (counts[m.region] ?? 0) + 1;
   }
-  var best = ms.first.element;
+  var best = ms.first.region;
   var bestCount = -1;
   for (final entry in counts.entries) {
     if (entry.value > bestCount) {
@@ -61,10 +60,14 @@ int countOfType(List<Monster> ms, String type) =>
 
 /// The single monster with the highest HP ("strongest").
 Monster strongest(List<Monster> ms) {
-  // TODO 2: return the monster with the highest HP. Right now it always returns
-  // the first monster in the list, so the "Strongest" panel is wrong. Walk the
-  // list and keep the one whose hp is largest.
-  return ms.first;
+  // TODO 2 fix: walk the list and keep the one whose hp is largest.
+  var best = ms.first;
+  for (final m in ms) {
+    if (m.hp > best.hp) {
+      best = m;
+    }
+  }
+  return best;
 }
 
 /// Look up one monster by id, or null if there is none.

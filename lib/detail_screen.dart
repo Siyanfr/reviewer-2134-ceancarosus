@@ -19,10 +19,10 @@ class DetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _row('Name', monster.name),
-            // TODO 1: add a 'Type' row here.
-            // TODO 1: add an 'Element' row here.
+            _row('Type', monster.type),
+            _row('Element', monster.element),
             _row('HP', '${monster.hp}'),
-            // TODO 1: add an 'Attack' row here.
+            _row('Attack', '${monster.attack}'),
             _row('Region', monster.region),
           ],
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'data.dart';
 import 'stats.dart';
+import 'detail_screen.dart';
 
 /// HAUDEX home: a stats card over a filterable list of monsters.
 ///
@@ -56,9 +57,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     for (final t in kTypes)
                       DropdownMenuItem(value: t, child: Text(t)),
                   ],
-                  // BUG D: this updates the field but never calls setState, so
-                  // the list and the "Showing N" count never change.
-                  onChanged: (v) => _filterType = v,
+                  // BUG D fix: call setState so the list and count rebuild.
+                  onChanged: (v) {
+                    setState(() {
+                      _filterType = v;
+                    });
+                  },
                 ),
                 const Spacer(),
                 Text('Showing ${visible.length} of ${all.length}'),
@@ -69,17 +73,21 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.builder(
               itemCount: visible.length,
               itemBuilder: (context, index) {
-                // BUG E: this always reads the first monster, so every row in
-                // the list shows the same one. It should use `index`.
-                final m = visible[0];
+                // BUG E fix: use index, not a hardcoded 0.
+                final m = visible[index];
                 return ListTile(
                   title: Text(m.name),
                   subtitle: Text('${m.type} - ${m.region}'),
                   trailing: Text('HP ${m.hp}'),
-                  // TODO 1: when a tile is tapped, open DetailScreen for THIS monster
-                  // (import detail_screen.dart, then Navigator.push a
-                  // MaterialPageRoute). Right now tapping a tile does nothing.
-                  onTap: () {},
+                  // TODO 1 fix: open DetailScreen for this monster.
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailScreen(monster: m),
+                      ),
+                    );
+                  },
                 );
               },
             ),
