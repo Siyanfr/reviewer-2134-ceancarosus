@@ -1,0 +1,69 @@
+name: Self-check & screenshot
+
+# This does NOT grade you. It is a practice reviewer for the midterm.
+# On every push it (1) checks whether each bug and TODO is fixed, (2) prints your
+# current answers to the 10 quiz questions, and (3) saves a screenshot of your
+# app. Open this run's summary to read your answers, or download the
+# **app-screenshot** artifact. You do not need to run anything locally.
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Self-check + your answers
+        run: |
+          set +e
+          flutter test 2>&1 | tee test.log
+          rc=${PIPESTATUS[0]}
+          {
+            echo '### Your current answers (this is practice for the midterm)'
+            echo '```'
+            sed -n '/HAUDEX-ANSWERS-START/,/HAUDEX-ANSWERS-END/p' test.log | grep -v 'HAUDEX-ANSWERS'
+            echo '```'
+            if [ "$rc" -eq 0 ]; then
+              echo '**All checks passed - every bug and TODO is fixed.**'
+            else
+              echo '**Some checks still failing - keep going. This does not affect your grade.**'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build the web app
+        if: always()
+        run: flutter build web --release
+
+      - name: Screenshot the running app
+        if: always()
+        run: |
+          (cd build/web && python3 -m http.server 8080 &)
+          for i in $(seq 1 40); do curl -sf -o /dev/null http://localhost:8080/ && break; sleep 0.5; done
+          npx -y playwright@1.62 install --with-deps chromium
+          npx -y playwright@1.62 screenshot --wait-for-timeout 8000 http://localhost:8080/ home.png || true
+
+      - name: Upload the screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-screenshot
+          path: home.png
+          if-no-files-found: warn
